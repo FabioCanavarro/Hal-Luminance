@@ -7,7 +7,6 @@
 )]
 #![deny(clippy::large_stack_frames)]
 
-use defmt::info;
 use esp_hal::clock::CpuClock;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Level, Output, OutputConfig};
@@ -18,6 +17,7 @@ use esp_hal::ledc::LowSpeed;
 use esp_hal::ledc::channel::ChannelIFace;
 use esp_hal::{ledc, main};
 use esp_hal::time::Rate;
+use esp_println::println;
 use panic_rtt_target as _;
 
 extern crate alloc;
@@ -33,18 +33,13 @@ esp_bootloader_esp_idf::esp_app_desc!();
 #[main]
 fn main() -> ! {
     // generator version: 1.2.0
-
-    rtt_target::rtt_init_defmt!();
-
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
 
     esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: 98768);
 
-    let mut mosfet = Output::new(peripherals.GPIO5, Level::Low, OutputConfig::default());
-    let mut led = Output::new(peripherals.GPIO0, Level::High, OutputConfig::default());
-
-    let mut pwm = ledc::Ledc::new(peripherals.LEDC);
+    let mosfet = Output::new(peripherals.GPIO5, Level::Low, OutputConfig::default());
+    let pwm = ledc::Ledc::new(peripherals.LEDC);
 
 
     let mut mosfet_timer = pwm.timer::<LowSpeed>(ledc::timer::Number::Timer0);
@@ -65,10 +60,10 @@ fn main() -> ! {
     let delayer = Delay::new();
 
     loop {
-        info!("dim");
+        println!("dim");
         mosfet_channel.set_duty_hw(2355);
         delayer.delay_millis(500);
-        info!("Bright");
+        println!("Bright");
         mosfet_channel.set_duty_hw(7000);
         delayer.delay_millis(500);
         
