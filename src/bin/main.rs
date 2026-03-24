@@ -7,14 +7,14 @@
 )]
 #![deny(clippy::large_stack_frames)]
 
+use embedded_hal::pwm::SetDutyCycle;
 use esp_hal::clock::CpuClock;
 use esp_hal::delay::Delay;
 use esp_hal::gpio::{Level, Output, OutputConfig};
-use esp_hal::ledc::channel::ChannelHW;
 use esp_hal::ledc::timer::config::Duty;
 use esp_hal::ledc::timer::TimerIFace;
 use esp_hal::ledc::LowSpeed;
-use esp_hal::ledc::channel::ChannelIFace;
+use esp_hal::ledc::channel::{Channel, ChannelIFace};
 use esp_hal::{ledc, main};
 use esp_hal::time::Rate;
 use esp_println::println;
@@ -43,7 +43,7 @@ fn main() -> ! {
 
 
     let mut mosfet_timer = pwm.timer::<LowSpeed>(ledc::timer::Number::Timer0);
-    let mut mosfet_channel = pwm.channel::<LowSpeed>(ledc::channel::Number::Channel1, mosfet);
+    let mut mosfet_channel: Channel<'_, LowSpeed> = pwm.channel::<LowSpeed>(ledc::channel::Number::Channel1, mosfet);
 
     let _ = mosfet_timer.configure(ledc::timer::config::Config {
         duty: Duty::Duty14Bit,
@@ -61,10 +61,10 @@ fn main() -> ! {
 
     loop {
         println!("dim");
-        mosfet_channel.set_duty_hw(2355);
+        let _ = mosfet_channel.set_duty_cycle(2323);
         delayer.delay_millis(500);
+        let _ = mosfet_channel.set_duty_cycle(7000);
         println!("Bright");
-        mosfet_channel.set_duty_hw(7000);
         delayer.delay_millis(500);
         
     }
