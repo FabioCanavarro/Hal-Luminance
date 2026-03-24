@@ -10,10 +10,9 @@
 use embedded_hal::pwm::SetDutyCycle;
 use esp_hal::clock::CpuClock;
 use esp_hal::delay::Delay;
-use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::ledc::timer::config::Duty;
 use esp_hal::ledc::timer::TimerIFace;
-use esp_hal::ledc::LowSpeed;
+use esp_hal::ledc::HighSpeed;
 use esp_hal::ledc::channel::{Channel, ChannelIFace};
 use esp_hal::{ledc, main};
 use esp_hal::time::Rate;
@@ -38,19 +37,18 @@ fn main() -> ! {
 
     esp_alloc::heap_allocator!(#[esp_hal::ram(reclaimed)] size: 98768);
 
-    let mosfet = Output::new(peripherals.GPIO5, Level::Low, OutputConfig::default());
     let pwm = ledc::Ledc::new(peripherals.LEDC);
 
-
-    let mut mosfet_timer = pwm.timer::<LowSpeed>(ledc::timer::Number::Timer0);
-    let mut mosfet_channel: Channel<'_, LowSpeed> = pwm.channel::<LowSpeed>(ledc::channel::Number::Channel1, mosfet);
+    let mut mosfet_timer = pwm.timer::<HighSpeed>(ledc::timer::Number::Timer0);
+    let mut mosfet_channel = pwm.channel::<HighSpeed>(ledc::channel::Number::Channel1, peripherals.GPIO5);
 
     let _ = mosfet_timer.configure(ledc::timer::config::Config {
         duty: Duty::Duty14Bit,
-        clock_source: esp_hal::ledc::timer::LSClockSource::APBClk,
+        clock_source: esp_hal::ledc::timer::HSClockSource::APBClk,
         frequency: Rate::from_khz(1),
     });
 
+    // btw its until 65535
     let _ = mosfet_channel.configure(ledc::channel::config::Config {
         timer: &mosfet_timer,
         duty_pct: 0, // Start with 0% duty cycle (off)
@@ -59,14 +57,41 @@ fn main() -> ! {
 
     let delayer = Delay::new();
 
-    loop {
-        println!("dim");
-        let _ = mosfet_channel.set_duty_cycle(2323);
-        delayer.delay_millis(500);
-        let _ = mosfet_channel.set_duty_cycle(7000);
-        println!("Bright");
-        delayer.delay_millis(500);
-        
-    }
+    let mut cycle: u16 = 50;
+    let mut ledreturn: bool = false;
 
+    loop {
+        if cycle > 65500 {
+            ledreturn = true;
+        }
+        else if cycle < 50 {
+            ledreturn = false;
+        }
+        else if !ledreturn {
+            cycle += 26;
+        }
+        else if ledreturn {
+            cycle -= 26;
+        }
+        let _ = mosfet_channel.set_duty_cycle(cycle);
+        delayer.delay_millis(1);
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
