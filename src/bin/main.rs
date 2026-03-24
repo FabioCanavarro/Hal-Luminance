@@ -61,13 +61,14 @@ fn main() -> ! {
     let mut ledreturn: bool = false;
 
     loop {
-        if cycle > 65500 {
+        if cycle > 65400 {
             ledreturn = true;
         }
-        else if cycle < 50 {
+        else if cycle < 100 {
             ledreturn = false;
         }
-        else if !ledreturn {
+
+        if !ledreturn {
             cycle += 26;
         }
         else if ledreturn {
@@ -75,6 +76,7 @@ fn main() -> ! {
         }
         let _ = mosfet_channel.set_duty_cycle(cycle);
         delayer.delay_millis(1);
+        println!("duty cycle = {}", cycle);
     }
 }
 
